@@ -39,12 +39,11 @@ const DEFAULT_URL = 'https://googlechromelabs.github.io/dark-mode-toggle/demo/';
 
 // See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html ↵
 // #reflecting-content-attributes-in-idl-attributes.
-const installStringReflection = (obj, attrName, propName = attrName) => {
-  Object.defineProperty(obj, propName, {
+const installStringReflection = (obj, attrName) => {
+  Object.defineProperty(obj, attrName, {
     enumerable: true,
     get() {
-      const value = this.getAttribute(attrName);
-      return value === null ? '' : value;
+      return this.getAttribute(attrName) || '';
     },
     set(v) {
       this.setAttribute(attrName, v);
@@ -52,8 +51,8 @@ const installStringReflection = (obj, attrName, propName = attrName) => {
   });
 };
 
-const installBoolReflection = (obj, attrName, propName = attrName) => {
-  Object.defineProperty(obj, propName, {
+const installBoolReflection = (obj, attrName) => {
+  Object.defineProperty(obj, attrName, {
     enumerable: true,
     get() {
       return this.hasAttribute(attrName);
