@@ -22,8 +22,6 @@ const MEDIA = 'media';
 const LIGHT = 'light';
 const DARK = 'dark';
 const NO_PREFERENCE = 'no-preference';
-const MQ_DARK = `(${PREFERS_COLOR_SCHEME}:${DARK})`;
-const MQ_LIGHT = `(${PREFERS_COLOR_SCHEME}:${LIGHT}),(${PREFERS_COLOR_SCHEME}:${NO_PREFERENCE})`;
 const LINK_REL_STYLESHEET = 'link[rel=stylesheet]';
 const REMEMBER = 'remember';
 const LEGEND = 'legend';
@@ -132,29 +130,22 @@ export class DarkModeToggle extends HTMLElement {
     this._permanentCheckbox = shadowRoot.querySelector('#permanentCheckbox');
     this._permanentLabel = shadowRoot.querySelector('#permanentLabel');
 
-    // Does the browser support native `prefers-color-scheme`?
-    const hasNativePrefersColorScheme =
-        matchMedia(MQ_DARK).media !== NOT_ALL;
     // Listen to `prefers-color-scheme` changes.
-    if (hasNativePrefersColorScheme) {
-      matchMedia(MQ_DARK).addListener(({matches}) => {
-        this.mode = matches ? DARK : LIGHT;
-        this._dispatchEvent(COLOR_SCHEME_CHANGE, {colorScheme: this.mode});
-      });
-    }
+    const matchDark = matchMedia(`(${PREFERS_COLOR_SCHEME}:${DARK})`);
+    const setModeFromMedia = () => this.mode = matchDark.matches ? DARK : LIGHT;
+    matchDark.addListener(() => {
+      setModeFromMedia();
+      this._dispatchEvent(COLOR_SCHEME_CHANGE, {colorScheme: this.mode});
+    });
     // Set initial state, giving preference to a remembered value, then the
-    // native value (if supported), and eventually defaulting to a light
-    // experience.
+    // native value (if supported), or a light experience (if not).
     const rememberedValue = store.getItem(NAME);
     if (rememberedValue && [DARK, LIGHT].includes(rememberedValue)) {
       this.mode = rememberedValue;
       this._permanentCheckbox.checked = true;
       this.permanent = true;
-    } else if (hasNativePrefersColorScheme) {
-      this.mode = matchMedia(MQ_LIGHT).matches ? LIGHT : DARK;
-    }
-    if (!this.mode) {
-      this.mode = LIGHT;
+    } else {
+      setModeFromMedia();
     }
     if (this.permanent && !rememberedValue) {
       store.setItem(NAME, this.mode);
